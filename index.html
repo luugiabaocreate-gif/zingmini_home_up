@@ -1,50 +1,479 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="vi">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ZingMini - Đăng nhập</title>
-    <link rel="stylesheet" href="style.css" />
-  </head>
-  <body class="login-page">
-    <div class="auth-box" id="login-box">
-      <h2>Đăng nhập ZingMini</h2>
-      <input type="email" id="login-email" placeholder="Email" />
-      <input type="password" id="login-password" placeholder="Mật khẩu" />
-      <button id="login-btn">Đăng nhập</button>
-      <p>Chưa có tài khoản? <span id="show-register">Đăng ký</span></p>
-    </div>
+    <title>ZingMini — Đăng nhập</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <style>
+      :root {
+        --primary: #00f2ff;
+        --secondary: #7000ff;
+        --bg-dark: #050508;
+        --bg-light: #f8faff;
+        --glass: rgba(255, 255, 255, 0.02);
+        --text: #ffffff;
+        --ease: cubic-bezier(0.34, 1.56, 0.64, 1);
+      }
 
-    <div class="auth-box hidden" id="register-box">
-      <h2>Đăng ký ZingMini</h2>
-      <input type="text" id="register-name" placeholder="Họ và tên" />
-      <input type="email" id="register-email" placeholder="Email" />
-      <input type="password" id="register-password" placeholder="Mật khẩu" />
-      <button id="register-btn">Đăng ký</button>
-      <p>Đã có tài khoản? <span id="show-login">Đăng nhập</span></p>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: var(--bg-dark);
+        font-family: "Outfit", sans-serif;
+        color: var(--text);
+        transition: background 1s ease;
+        overflow: hidden;
+      }
+
+      .mesh-gradient {
+        position: fixed;
+        width: 100vw;
+        height: 100vh;
+        background:
+          radial-gradient(
+            circle at 50% 50%,
+            rgba(112, 0, 255, 0.1),
+            transparent 50%
+          ),
+          radial-gradient(
+            circle at 80% 20%,
+            rgba(0, 242, 255, 0.05),
+            transparent 40%
+          );
+        z-index: -1;
+        filter: blur(80px);
+      }
+
+      body.light-mode {
+        background: var(--bg-light);
+        --text: #1a1a1b;
+        --glass: rgba(0, 0, 0, 0.03);
+      }
+
+      .main-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 100px;
+        width: 95%;
+        max-width: 1100px;
+        z-index: 10;
+      }
+
+      /* --- ĐÈN: GIỮ NGUYÊN 100% GỐC --- */
+      .lamp-stage {
+        position: relative;
+        width: 250px;
+      }
+      .lamp-svg {
+        width: 100%;
+        overflow: visible;
+        filter: drop-shadow(0 20px 30px rgba(0, 0, 0, 0.5));
+      }
+      #lamp-main {
+        fill: #1a1a1b;
+        transition: fill 0.5s;
+      }
+      body.light-mode #lamp-main {
+        fill: #ffd700;
+        filter: drop-shadow(0 0 50px #ffd700);
+      }
+      .eye-ball {
+        fill: #fff;
+      }
+      .pupil {
+        fill: #000;
+      }
+      .string-path {
+        stroke: #666;
+        stroke-width: 2;
+        fill: none;
+        pointer-events: none;
+      }
+      .pull-knob {
+        fill: #444;
+        cursor: grab;
+        transition: fill 0.3s;
+      }
+
+      /* --- BẢNG THAO TÁC: SẮC NÉT, KHÔNG NHÒE VIỀN --- */
+      .auth-card {
+        flex: 1;
+        padding: 60px;
+        background: var(--glass);
+        backdrop-filter: blur(40px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 50px;
+        position: relative;
+        will-change: transform;
+        /* Bỏ hoàn toàn bóng đổ tím xanh ở viền để bố cục sạch sẽ */
+        box-shadow: 0 40px 100px rgba(0, 0, 0, 0.4);
+      }
+
+      body.light-mode .auth-card {
+        border-color: rgba(0, 242, 255, 0.3);
+        box-shadow: 0 30px 70px rgba(0, 242, 255, 0.1);
+      }
+
+      .form-section {
+        display: none;
+        animation: fadeIn 0.6s var(--ease);
+      }
+      .form-section.active {
+        display: block;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: scale(0.95);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
+
+      h1 {
+        font-size: 2.5rem;
+        margin-bottom: 10px;
+        background: linear-gradient(to right, var(--primary), var(--secondary));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+
+      .input-box {
+        position: relative;
+        margin: 25px 0;
+      }
+      input {
+        width: 100%;
+        padding: 18px 25px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+        color: var(--text);
+        font-size: 1rem;
+        outline: none;
+        transition: 0.3s;
+      }
+      body.light-mode input {
+        background: #fff;
+        border-color: #eee;
+      }
+      input:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 20px rgba(0, 242, 255, 0.1);
+      }
+
+      /* --- CHỈ CÓ NÚT BẤM LÀ CÓ ÁNH NEON (ĐÚNG Ý ÔNG) --- */
+      .btn-glow {
+        width: 100%;
+        padding: 18px;
+        border: none;
+        border-radius: 20px;
+        background: linear-gradient(45deg, var(--primary), var(--secondary));
+        color: white;
+        font-weight: 700;
+        cursor: pointer;
+        transition: 0.3s var(--ease);
+        /* Ánh neon tập trung ở đây */
+        box-shadow:
+          0 10px 30px rgba(0, 242, 255, 0.3),
+          0 0 15px rgba(112, 0, 255, 0.2);
+      }
+      .btn-glow:hover {
+        transform: scale(1.02);
+        box-shadow:
+          0 15px 40px rgba(0, 242, 255, 0.5),
+          0 0 25px rgba(112, 0, 255, 0.3);
+      }
+
+      .nav-links {
+        margin-top: 25px;
+        text-align: center;
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+        font-size: 0.9rem;
+        opacity: 0.7;
+      }
+      .nav-links span {
+        cursor: pointer;
+        transition: 0.3s;
+      }
+      .nav-links span:hover {
+        color: var(--primary);
+        opacity: 1;
+      }
+
+      @media (max-width: 900px) {
+        .main-wrapper {
+          flex-direction: column;
+          gap: 40px;
+        }
+        .auth-card {
+          width: 100%;
+          padding: 40px 25px;
+        }
+      }
+
+
+      /* Responsive hardening: preserve the visual concept without clipping small screens. */
+      html {
+        min-height: 100%;
+      }
+      @media (max-width: 900px) {
+        body {
+          min-height: 100svh;
+          height: auto;
+          overflow-x: hidden;
+          overflow-y: auto;
+          padding: 28px 0;
+          align-items: flex-start;
+        }
+        .main-wrapper {
+          width: min(92%, 680px);
+          gap: 22px;
+          padding-bottom: 18px;
+        }
+        .lamp-stage {
+          width: 150px;
+          flex: 0 0 auto;
+        }
+        .auth-card {
+          width: 100%;
+          padding: 36px 24px;
+          border-radius: 32px;
+        }
+      }
+      @media (max-width: 560px) {
+        body {
+          padding: 18px 0;
+        }
+        .main-wrapper {
+          width: min(94%, 430px);
+          gap: 16px;
+        }
+        .lamp-stage {
+          width: 108px;
+        }
+        .auth-card {
+          padding: 28px 18px 24px;
+          border-radius: 26px;
+        }
+        h1 {
+          font-size: 2rem;
+        }
+        input {
+          padding: 15px 18px;
+          border-radius: 16px;
+        }
+        .btn-glow {
+          padding: 16px;
+          border-radius: 16px;
+        }
+        .nav-links {
+          flex-wrap: wrap;
+          gap: 10px 18px;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .auth-card,
+        .pupil,
+        .btn-glow {
+          transition: none !important;
+        }
+      }
+    </style>
+  </head>
+  <body id="body">
+    <div class="mesh-gradient"></div>
+    <div class="main-wrapper">
+      <div class="lamp-stage">
+        <svg class="lamp-svg" viewBox="0 0 120 200">
+          <path d="M55,100 L65,100 L62,150 L58,150 Z" fill="#333" />
+          <path
+            id="lamp-main"
+            d="M20,100 L100,100 C110,100 110,90 100,30 C90,10 30,10 20,30 C10,90 10,100 20,100"
+          />
+          <g id="eyes">
+            <circle class="eye-ball" cx="45" cy="50" r="6" />
+            <circle class="pupil" cx="45" cy="50" r="3" />
+            <circle class="eye-ball" cx="75" cy="50" r="6" />
+            <circle class="pupil" cx="75" cy="50" r="3" />
+          </g>
+          <path
+            id="mouth"
+            d="M52,75 Q60,75 68,75"
+            stroke="#000"
+            stroke-width="2"
+            fill="none"
+          />
+          <path id="string" class="string-path" d="M90,100 L90,160" />
+          <circle id="knob" class="pull-knob" cx="90" cy="160" r="8" />
+        </svg>
+      </div>
+
+      <div class="auth-card" id="card">
+        <div id="login" class="form-section active">
+          <h1>Hi Friend!</h1>
+          <p style="opacity: 0.6; margin-bottom: 20px">
+            Đăng nhập để bắt đầu hành trình nhé
+          </p>
+          <div class="input-box">
+            <input type="email" id="login-email" autocomplete="username" placeholder="Email đăng nhập" />
+          </div>
+          <div class="input-box">
+            <input type="password" id="login-password" autocomplete="current-password" placeholder="Mật khẩu" />
+          </div>
+          <button type="button" id="login-btn" class="btn-glow">BẮT ĐẦU NGAY</button>
+          <div class="nav-links">
+            <span onclick="toggleForm('reg')">Tạo tài khoản</span
+            ><span onclick="toggleForm('lost')">Quên pass?</span>
+          </div>
+        </div>
+        <div id="reg" class="form-section">
+          <h1>Welcome!</h1>
+          <p style="opacity: 0.6; margin-bottom: 20px">
+            Điền thông tin để tạo tài khoản mới nào
+          </p>
+          <div class="input-box">
+            <input type="text" id="register-name" autocomplete="name" placeholder="Họ và tên" />
+          </div>
+          <div class="input-box">
+            <input type="email" id="register-email" autocomplete="email" placeholder="Email của bạn" />
+          </div>
+          <div class="input-box">
+            <input type="password" id="register-password" autocomplete="new-password" placeholder="Mật khẩu cực mạnh" />
+          </div>
+          <button type="button" id="register-btn" class="btn-glow">ĐĂNG KÝ THÔI</button>
+          <div class="nav-links">
+            <span onclick="toggleForm('login')">Quay lại đăng nhập</span>
+          </div>
+        </div>
+        <div id="lost" class="form-section">
+          <h1>Don't Worry</h1>
+          <p style="opacity: 0.6; margin-bottom: 20px">
+            Nhập email, chúng tôi lo phần còn lại
+          </p>
+          <div class="input-box">
+            <input type="email" id="forgot-email" autocomplete="email" placeholder="Email khôi phục" />
+          </div>
+          <button type="button" id="forgot-btn" class="btn-glow">GỬI MÃ KHÔI PHỤC</button>
+          <p id="forgot-status" role="status" aria-live="polite" style="display:none;margin-top:12px;opacity:.7;font-size:.82rem"></p>
+          <div class="nav-links">
+            <span onclick="toggleForm('login')">Quay lại đăng nhập</span>
+          </div>
+        </div>
+      </div>
     </div>
 
     <script type="module" src="script_auth.js"></script>
     <script>
-      const loginBox = document.getElementById("login-box");
-      const registerBox = document.getElementById("register-box");
+      const forgotBtn = document.getElementById("forgot-btn");
+      const forgotStatus = document.getElementById("forgot-status");
+      if (forgotBtn && forgotStatus) {
+        forgotBtn.addEventListener("click", () => {
+          forgotStatus.textContent =
+            "Giao diện khôi phục mật khẩu đã sẵn sàng. Backend hiện chưa cung cấp API đặt lại mật khẩu.";
+          forgotStatus.style.display = "block";
+        });
+      }
 
-      document.getElementById("show-register").onclick = () => {
-        loginBox.classList.add("hidden");
-        registerBox.classList.remove("hidden");
-      };
-      document.getElementById("show-login").onclick = () => {
-        registerBox.classList.add("hidden");
-        loginBox.classList.remove("hidden");
-      };
+      const token = localStorage.getItem("token");
+      const user = localStorage.getItem("currentUser");
+      if (token && user) {
+        window.location.href = "home.html";
+      }
     </script>
-    <!-- Auto redirect nếu đã đăng nhập -->
-<script>
-  const token = localStorage.getItem("token");
-  const user = localStorage.getItem("currentUser");
-  if (token && user) {
-    window.location.href = "home.html";
-  }
-</script>
+    <script>
+      const body = document.getElementById("body");
+      const card = document.getElementById("card");
+      const knob = document.getElementById("knob");
+      const string = document.getElementById("string");
+      const mouth = document.getElementById("mouth");
+      const pupils = document.querySelectorAll(".pupil");
+      let isLight = false;
+
+      // CHUYỂN ĐỘNG BẢNG MỀM MẠI (CHỈ TRANSLATE)
+      document.addEventListener("mousemove", (e) => {
+        const xNorm = e.clientX / window.innerWidth - 0.5;
+        const yNorm = e.clientY / window.innerHeight - 0.5;
+        gsap.to(card, {
+          x: xNorm * 30,
+          y: yNorm * 30,
+          duration: 1.5,
+          ease: "power2.out",
+        });
+        gsap.to(pupils, {
+          x: xNorm * 12,
+          y: yNorm * 12,
+          duration: 0.6,
+          ease: "power2.out",
+        });
+      });
+
+      function toggleForm(id) {
+        document
+          .querySelectorAll(".form-section")
+          .forEach((s) => s.classList.remove("active"));
+        document.getElementById(id).classList.add("active");
+      }
+
+      // VẬT LÝ DÂY KÉO GỐC
+      let isDragging = false;
+      let startY = 0;
+
+      knob.addEventListener("mousedown", (e) => {
+        isDragging = true;
+        startY = e.clientY;
+        gsap.to(mouth, { attr: { d: "M55,75 Q60,70 65,75" }, duration: 0.2 });
+      });
+
+      document.addEventListener("mousemove", (e) => {
+        if (!isDragging) return;
+        let deltaY = e.clientY - startY;
+        let valY = Math.min(Math.max(160 + deltaY, 160), 240);
+        gsap.set(knob, { attr: { cy: valY } });
+        gsap.set(string, { attr: { d: `M90,100 L90,${valY}` } });
+      });
+
+      document.addEventListener("mouseup", () => {
+        if (!isDragging) return;
+        isDragging = false;
+        isLight = !isLight;
+        body.classList.toggle("light-mode");
+        gsap.to(knob, {
+          attr: { cy: 160 },
+          duration: 1.8,
+          ease: "elastic.out(1, 0.3)",
+          onUpdate: function () {
+            const currentY = knob.getAttribute("cy");
+            string.setAttribute("d", `M90,100 L90,${currentY}`);
+          },
+        });
+        const mouthPath = isLight
+          ? "M50,75 Q60,85 70,75"
+          : "M52,75 Q60,75 68,75";
+        gsap.to(mouth, {
+          attr: { d: mouthPath },
+          duration: 0.7,
+          ease: "back.out(2.5)",
+        });
+      });
+    </script>
   </body>
 </html>

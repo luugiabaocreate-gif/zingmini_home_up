@@ -90,12 +90,12 @@ setTimeout(() => {
       document.body.classList.add("dark");
       document.documentElement.classList.add("dark"); // in case some rules target html
       if (btn) btn.setAttribute("aria-pressed", "true");
-      if (btn) btn.textContent = "🌞"; // sun = switch to light
+      if (btn) btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>'; // switch to light
     } else {
       document.body.classList.remove("dark");
       document.documentElement.classList.remove("dark");
       if (btn) btn.setAttribute("aria-pressed", "false");
-      if (btn) btn.textContent = "🌙"; // moon = switch to dark
+      if (btn) btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M20 15.2A8.5 8.5 0 0 1 8.8 4 8.5 8.5 0 1 0 20 15.2z"/></svg>'; // switch to dark
     }
     try {
       localStorage.setItem(KEY, theme);
@@ -151,7 +151,7 @@ function escapeHtml(s = "") {
   return String(s)
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
-    .replace(/>/g, ">");
+    .replace(/>/g, "&gt;");
 }
 async function safeJson(res) {
   const t = await res.text().catch(() => "");
@@ -449,7 +449,7 @@ function createPostNode(post) {
       });
     } catch (e) {}
     likeBtn.classList.add("reaction-selected");
-    likeBtn.textContent = "👍 • Bạn";
+    likeBtn.innerHTML = '<span aria-hidden="true">♡</span> Bạn';
   });
 
   // === THÊM ĐOẠN NÀY SAU LIKE ===
@@ -598,38 +598,57 @@ function appendChatMessage(
 function openChatWindow(friendId, friendName) {
   if (!chatWindowsRoot) return;
   if (openChats[friendId]) {
-    chatWindowsRoot.prepend(openChats[friendId]);
+    const existing = openChats[friendId];
+    existing.classList.remove("is-collapsed");
+    chatWindowsRoot.prepend(existing);
+    requestAnimationFrame(() => {
+      const existingBody = existing.querySelector(".body");
+      if (existingBody) existingBody.scrollTop = existingBody.scrollHeight;
+    });
     return;
   }
   const win = document.createElement("div");
   win.className = "chat-window";
   win.dataset.uid = friendId;
+  const friendAvatar =
+    friendPool[friendId]?.avatar || `https://i.pravatar.cc/64?u=${encodeURIComponent(friendId)}`;
   win.innerHTML = `
+    <div class="chat-collapsed-bubble" role="button" tabindex="0"
+         aria-label="Mở lại cuộc trò chuyện với ${escapeHtml(friendName)}"
+         title="Mở lại cuộc trò chuyện">
+      <img src="${escapeHtml(friendAvatar)}" alt="${escapeHtml(friendName)}" />
+      <span class="chat-collapsed-status" aria-hidden="true"></span>
+    </div>
     <div class="head">
-      <div style="display:flex;align-items:center;gap:8px">
+      <div class="chat-head-person">
+        <img class="chat-head-avatar" src="${escapeHtml(friendAvatar)}" alt="" aria-hidden="true" />
         <div>${escapeHtml(friendName)}</div>
-        <button class="btn btn-voice" title="Gọi thoại">📞</button>
-        <button class="btn btn-video" title="Gọi video">📹</button>
+        <button class="btn btn-voice" title="Gọi thoại" aria-label="Gọi thoại">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.2 4.5 5 5.7c-.8.4-1.2 1.3-.9 2.2 1.5 5.1 4.7 8.4 9.8 9.9.9.3 1.8-.1 2.2-.9l1.2-2.2-3.2-1.5-1.1 1.4a11.4 11.4 0 0 1-5.4-5.4L8 8.1 7.2 4.5z"/></svg>
+        </button>
+        <button class="btn btn-video" title="Gọi video" aria-label="Gọi video">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="12" height="12" rx="2"/><path d="m15 10 5-3v10l-5-3z"/></svg>
+        </button>
       </div>
-      <div>
-        <button class="mini collapse">_</button>
-        <button class="mini close">×</button>
+      <div class="chat-head-controls">
+        <button class="mini collapse" aria-label="Thu nhỏ cuộc trò chuyện" title="Thu nhỏ">−</button>
+        <button class="mini close" aria-label="Đóng cuộc trò chuyện" title="Đóng">×</button>
       </div>
     </div>
     <div class="body"></div>
     <div class="foot">
-      <input class="cw-input" placeholder="Nhập tin nhắn..."/>
+      <input class="cw-input" placeholder="Nhập tin nhắn..." aria-label="Tin nhắn"/>
       <button class="cw-send btn">Gửi</button>
     </div>
   `;
   chatWindowsRoot.prepend(win);
-  chatWindowsRoot.style.pointerEvents = "auto";
   openChats[friendId] = win;
   const body = win.querySelector(".body");
   const input = win.querySelector(".cw-input");
   const sendBtn = win.querySelector(".cw-send");
   const closeBtn = win.querySelector(".close");
   const collapseBtn = win.querySelector(".collapse");
+  const collapsedBubble = win.querySelector(".chat-collapsed-bubble");
   // 🎧 Nút gọi thoại
   const voiceBtn = win.querySelector(".btn-voice");
   voiceBtn.addEventListener("click", () => {
@@ -704,12 +723,34 @@ function openChatWindow(friendId, friendName) {
     win.remove();
     delete openChats[friendId];
   });
-  collapseBtn.addEventListener("click", () => {
-    const b = win.querySelector(".body"),
-      f = win.querySelector(".foot");
-    const hidden = b.style.display === "none";
-    b.style.display = hidden ? "block" : "none";
-    f.style.display = hidden ? "flex" : "none";
+  const restoreChat = () => {
+    win.classList.remove("is-collapsed");
+    collapseBtn.setAttribute("aria-label", "Thu nhỏ cuộc trò chuyện");
+    collapseBtn.title = "Thu nhỏ";
+    requestAnimationFrame(() => {
+      body.scrollTop = body.scrollHeight;
+    });
+  };
+
+  collapseBtn.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    win.classList.add("is-collapsed");
+    collapseBtn.setAttribute("aria-label", "Mở lại cuộc trò chuyện");
+    collapseBtn.title = "Mở lại";
+  });
+
+  collapsedBubble.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    restoreChat();
+  });
+
+  collapsedBubble.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      restoreChat();
+    }
   });
 }
 
@@ -765,9 +806,7 @@ if (socket && socket.on) {
     if (node) {
       const likeBtn = node.querySelector(".like-btn");
       if (likeBtn) {
-        likeBtn.textContent = `${r.reaction} • ${
-          r.user === currentUser.name ? "Bạn" : r.user
-        }`;
+        likeBtn.innerHTML = `<span aria-hidden="true">♡</span> ${r.user === currentUser.name ? "Bạn" : r.user}`;
         likeBtn.classList.add("reaction-selected");
       }
     }
@@ -823,7 +862,7 @@ if (profileBtn) {
     if (profileDropdown) profileDropdown.classList.toggle("hidden");
   });
   document.addEventListener("click", (e) => {
-    if (!e.target.closest(".profile-wrap") && profileDropdown)
+    if (!e.target.closest(".profile-menu-wrap") && profileDropdown)
       profileDropdown.classList.add("hidden");
   });
 }
@@ -927,18 +966,10 @@ if (navShorts) {
 }
 
 // All done
-// --- Chat auto-fix layout sync ---
-const observer = new MutationObserver(() => {
-  document.querySelectorAll(".chat-window .body").forEach((body) => {
-    // đảm bảo cuộn xuống cuối cùng mỗi khi có tin nhắn mới
-    body.scrollTop = body.scrollHeight;
-    // ép browser tính lại layout (tránh render chồng)
-    body.style.display = "none";
-    void body.offsetHeight; // force reflow
-    body.style.display = "";
-  });
-});
-observer.observe(document.body, { childList: true, subtree: true });
+// Chat layout guard:
+// Do not toggle display styles from a document-wide MutationObserver. That old
+// approach could undo the collapsed state and force unnecessary reflows.
+// Message insertion already performs the required scroll-to-bottom operation.
 /******************************************************
  * 🎧 VOICE CALL FEATURE — WebRTC + Socket.IO
  ******************************************************/
@@ -1309,9 +1340,26 @@ const leftCol = document.querySelector(".left-col");
 const rightCol = document.querySelector(".right-col");
 
 if (leftToggle && leftCol) {
-  leftToggle.addEventListener("click", () => {
-    leftCol.classList.toggle("show");
+  const closeMobileMenus = () => {
+    leftCol.classList.remove("show");
     rightCol?.classList.remove("show");
+    document.body.classList.remove("mobile-menu-open");
+  };
+
+  leftToggle.addEventListener("click", () => {
+    const open = !leftCol.classList.contains("show");
+    leftCol.classList.toggle("show", open);
+    rightCol?.classList.remove("show");
+    document.body.classList.toggle("mobile-menu-open", open);
+  });
+
+  document.addEventListener("click", (event) => {
+    if (window.innerWidth > 760 || !leftCol.classList.contains("show")) return;
+    if (!leftCol.contains(event.target) && !leftToggle.contains(event.target)) closeMobileMenus();
+  });
+
+  window.addEventListener("resize", () => {
+    if (window.innerWidth > 760) closeMobileMenus();
   });
 }
 
@@ -1521,6 +1569,15 @@ fetchAndStoreCurrentUser()
 // === Upload avatar handler (ổn định, đồng bộ & không mất sau reload) ===
 const avatarInput = document.getElementById("avatar-input");
 const uploadAvatarBtn = document.getElementById("upload-avatar-btn");
+const avatarFileName = document.getElementById("avatar-file-name");
+
+if (avatarInput && avatarFileName) {
+  avatarInput.addEventListener("change", () => {
+    const file = avatarInput.files?.[0];
+    avatarFileName.textContent = file ? file.name : "Chưa chọn tệp";
+    avatarFileName.title = file ? file.name : "";
+  });
+}
 
 if (avatarInput && uploadAvatarBtn) {
   uploadAvatarBtn.addEventListener("click", async () => {
@@ -1563,6 +1620,10 @@ if (avatarInput && uploadAvatarBtn) {
         const el = document.getElementById(id);
         if (el) el.src = finalUrl;
       });
+      if (avatarFileName) {
+        avatarFileName.textContent = "Đã chọn ảnh";
+        avatarFileName.title = "";
+      }
 
       // === Đồng bộ ảnh trong toàn hệ thống ===
       document.querySelectorAll("img[data-id]").forEach((img) => {
